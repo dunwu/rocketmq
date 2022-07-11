@@ -196,6 +196,8 @@ public class TransactionalMessageBridge {
         return store.putMessage(parseHalfMessageInner(messageInner));
     }
 
+    // 注释8.2：事务消息存储，与普通消息存储不同，事务消息存储是复制原消息消费队列，然后修改Topic，通过
+    // 定时任务，对这个Topic的事务消息进行分发消费（本地事务成功才会）
     public CompletableFuture<PutMessageResult> asyncPutHalfMessage(MessageExtBrokerInner messageInner) {
         return store.asyncPutMessage(parseHalfMessageInner(messageInner));
     }

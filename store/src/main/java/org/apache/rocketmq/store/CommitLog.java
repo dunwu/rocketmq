@@ -901,6 +901,7 @@ public class CommitLog {
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).incrementAndGet();
         storeStatsService.getSinglePutMessageTopicSizeTotal(topic).addAndGet(result.getWroteBytes());
 
+        // 注释4.3：消息刷盘，HA高可用机制
         handleDiskFlush(result, putMessageResult, msg);
         handleHA(result, putMessageResult, msg);
 
@@ -951,7 +952,7 @@ public class CommitLog {
         return CompletableFuture.completedFuture(PutMessageStatus.PUT_OK);
     }
 
-
+    // 注释4.8.1：同步刷盘任务参数 GroupCommitRequest
     public void handleDiskFlush(AppendMessageResult result, PutMessageResult putMessageResult, MessageExt messageExt) {
         // Synchronization flush
         if (FlushDiskType.SYNC_FLUSH == this.defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
@@ -977,6 +978,7 @@ public class CommitLog {
             }
         }
         // Asynchronous flush
+        // 注释4.8.2：异步刷盘
         else {
             if (!this.defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
                 flushCommitLogService.wakeup();
@@ -1145,6 +1147,7 @@ public class CommitLog {
         return -1;
     }
 
+    // 注释4.5.1：获取当前 Commitlog 目录最小偏移量
     public long getMinOffset() {
         MappedFile mappedFile = this.mappedFileQueue.getFirstMappedFile();
         if (mappedFile != null) {
@@ -1168,6 +1171,7 @@ public class CommitLog {
         return null;
     }
 
+    // 注释4.5.1：返回下一个文件的起始偏移量
     public long rollNextFile(final long offset) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
         return offset + mappedFileSize - offset % mappedFileSize;
@@ -1235,6 +1239,7 @@ public class CommitLog {
         protected static final int RETRY_TIMES_OVER = 10;
     }
 
+    // 注释4.8.2：异步线程从DirectByteBuffer->MappedByteBuffer
     class CommitRealTimeService extends FlushCommitLogService {
 
         private long lastCommitTimestamp = 0;
@@ -1248,10 +1253,11 @@ public class CommitLog {
         public void run() {
             CommitLog.log.info(this.getServiceName() + " service started");
             while (!this.isStopped()) {
+                // 注释4.8.2：默认200ms间隔
                 int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitIntervalCommitLog();
-
+                // 注释4.8.2：每次提交任务至少的页数，默认为4页，即 4K*4
                 int commitDataLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogLeastPages();
-
+                // 注释4.8.2：两次真实提交最大间隔，默认200ms
                 int commitDataThoroughInterval =
                     CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogThoroughInterval();
 
@@ -1288,6 +1294,7 @@ public class CommitLog {
         }
     }
 
+    // 注释4.8.2：MappedByteBuffer->磁盘的线程
     class FlushRealTimeService extends FlushCommitLogService {
         private long lastFlushTimestamp = 0;
         private long printTimes = 0;
@@ -1344,6 +1351,7 @@ public class CommitLog {
             // Normal shutdown, to ensure that all the flush before exit
             boolean result = false;
             for (int i = 0; i < RETRY_TIMES_OVER && !result; i++) {
+                // 注释4.8.3：最终调用 Mapped.force()
                 result = CommitLog.this.mappedFileQueue.flush(0);
                 CommitLog.log.info(this.getServiceName() + " service shutdown, retry " + (i + 1) + " times " + (result ? "OK" : "Not OK"));
             }
@@ -1370,6 +1378,7 @@ public class CommitLog {
     }
 
     public static class GroupCommitRequest {
+        // 注释4.8.1：刷盘点偏移量
         private final long nextOffset;
         private CompletableFuture<PutMessageStatus> flushOKFuture = new CompletableFuture<>();
         private final long startTimestamp = System.currentTimeMillis();
@@ -1401,11 +1410,14 @@ public class CommitLog {
 
     /**
      * GroupCommit Service
+     * 注释4.8.1：刷盘任务
      */
     class GroupCommitService extends FlushCommitLogService {
+        // 注释4.8.1：同步刷盘任务暂存容器
         private volatile List<GroupCommitRequest> requestsWrite = new ArrayList<GroupCommitRequest>();
+        // 注释4.8.1：每次处理的 request 容器，避免任务提交与任务执行的锁冲突
         private volatile List<GroupCommitRequest> requestsRead = new ArrayList<GroupCommitRequest>();
-
+        // 注释4.8.1：客户端提交同步刷盘任务到线程，使用 countdownlatch 唤醒
         public synchronized void putRequest(final GroupCommitRequest request) {
             synchronized (this.requestsWrite) {
                 this.requestsWrite.add(request);
@@ -1418,7 +1430,7 @@ public class CommitLog {
             this.requestsWrite = this.requestsRead;
             this.requestsRead = tmp;
         }
-
+        // 注释4.8.1：真正执行落盘
         private void doCommit() {
             synchronized (this.requestsRead) {
                 if (!this.requestsRead.isEmpty()) {
@@ -1447,7 +1459,7 @@ public class CommitLog {
                 }
             }
         }
-
+        // 注释4.8.1：避免同步刷盘消费任务与其它消息生产者提交任务直接的锁竞争，提供了读容器和写容器
         public void run() {
             CommitLog.log.info(this.getServiceName() + " service started");
 
@@ -1493,6 +1505,7 @@ public class CommitLog {
         }
     }
 
+    // 注释4.3：用与消息的存储
     class DefaultAppendMessageCallback implements AppendMessageCallback {
         // File at the end of the minimum fixed length empty
         private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
@@ -1533,6 +1546,7 @@ public class CommitLog {
             ByteBuffer storeHostHolder = ByteBuffer.allocate(storeHostLength);
 
             this.resetByteBuffer(storeHostHolder, storeHostLength);
+            // 注释4.3：创建全局唯一消息ID，  ----(IP) ----(PORT) --------(offfset) 4+4+8 字节
             String msgId;
             if ((sysflag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0) {
                 msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(storeHostHolder), wroteOffset);

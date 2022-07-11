@@ -45,18 +45,24 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
+/**
+ * 注释5.7：定时消息实现类
+ */
 public class ScheduleMessageService extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
-
+    // 注释5.7：第一次调度时延迟的时间
     private static final long FIRST_DELAY_TIME = 1000L;
+    // 注释5.7：每一延迟级别调度一次后延迟该时间间隔后再放入调度池
     private static final long DELAY_FOR_A_WHILE = 100L;
+    // 注释5.7：异常后的延迟时间
     private static final long DELAY_FOR_A_PERIOD = 10000L;
-
+    // 注释5.7：延迟级别
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
         new ConcurrentHashMap<Integer, Long>(32);
-
+    // 注释5.7：延迟级别消息消费进度
     private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable =
         new ConcurrentHashMap<Integer, Long>(32);
+    // 注释5.7：默认消息存储器
     private final DefaultMessageStore defaultMessageStore;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private Timer timer;
@@ -90,6 +96,7 @@ public class ScheduleMessageService extends ConfigManager {
             Map.Entry<Integer, Long> next = it.next();
             int queueId = delayLevel2QueueId(next.getKey());
             long delayOffset = next.getValue();
+            // 注释5.7：定时消息统一主题 RMQ_SYS_SCHEDULE_TOPIC
             long maxOffset = this.defaultMessageStore.getMaxOffsetInQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, queueId);
             String value = String.format("%d,%d", delayOffset, maxOffset);
             String key = String.format("%s_%d", RunningStats.scheduleMessageOffset.name(), next.getKey());
@@ -110,6 +117,7 @@ public class ScheduleMessageService extends ConfigManager {
         return storeTimestamp + 1000;
     }
 
+    // 注释5.7.1：启动定时任务持久化延迟消息队列进度存储
     public void start() {
         if (started.compareAndSet(false, true)) {
             this.timer = new Timer("ScheduleMessageTimerThread", true);
@@ -126,6 +134,7 @@ public class ScheduleMessageService extends ConfigManager {
                 }
             }
 
+            // 注释5.7.1：10s 持久化一次延迟队列的消息消费进度
             this.timer.scheduleAtFixedRate(new TimerTask() {
 
                 @Override
@@ -160,6 +169,7 @@ public class ScheduleMessageService extends ConfigManager {
         return this.encode(false);
     }
 
+    // 注释5.7.1：延迟消息消费队列消息进度的加载与 delayLevelTable 数据的构造
     public boolean load() {
         boolean result = super.load();
         result = result && this.parseDelayLevel();

@@ -467,6 +467,7 @@ public class MQClientAPIImpl {
         request.setBody(msg.getBody());
 
         switch (communicationMode) {
+            // 注释3.4.4：oneway 的请求实现
             case ONEWAY:
                 this.remotingClient.invokeOneway(addr, request, timeoutMillis);
                 return null;
@@ -730,6 +731,7 @@ public class MQClientAPIImpl {
         return null;
     }
 
+    // 注释5.4.3：从 Broker 拉取消息的响应，通过回调返回
     private void pullMessageAsync(
         final String addr,
         final RemotingCommand request,

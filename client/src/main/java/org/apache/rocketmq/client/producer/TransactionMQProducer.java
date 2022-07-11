@@ -27,9 +27,9 @@ public class TransactionMQProducer extends DefaultMQProducer {
     private int checkThreadPoolMinSize = 1;
     private int checkThreadPoolMaxSize = 1;
     private int checkRequestHoldMax = 2000;
-
+    // 注释8.2：事务状态回查异步执行线程池
     private ExecutorService executorService;
-
+    // 注释8.2：事务监听器，实现本地事务状态的执行以及回查反馈两个方法
     private TransactionListener transactionListener;
 
     public TransactionMQProducer() {
@@ -87,6 +87,7 @@ public class TransactionMQProducer extends DefaultMQProducer {
         }
 
         msg.setTopic(NamespaceUtil.wrapNamespace(this.getNamespace(), msg.getTopic()));
+        // 注释8.2：调用普通生产者
         return this.defaultMQProducerImpl.sendMessageInTransaction(msg, null, arg);
     }
 

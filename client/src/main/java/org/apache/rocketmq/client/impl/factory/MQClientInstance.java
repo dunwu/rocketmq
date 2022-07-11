@@ -236,6 +236,7 @@ public class MQClientInstance {
                     // Start various schedule tasks
                     this.startScheduledTask();
                     // Start pull service
+                    // 注释5.4.1：pull线程池启动
                     this.pullMessageService.start();
                     // Start rebalance service
                     this.rebalanceService.start();
@@ -297,6 +298,7 @@ public class MQClientInstance {
             @Override
             public void run() {
                 try {
+                    // 注释5.6.3：最终调用了 LocalFileOffsetStore.persistAll，每5s定时任务执行本地保存
                     MQClientInstance.this.persistAllConsumerOffset();
                 } catch (Exception e) {
                     log.error("ScheduledTask persistAllConsumerOffset exception", e);
@@ -629,7 +631,7 @@ public class MQClientInstance {
                         } else {
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
                         }
-
+                        // 注释3.4.2：从NameServer获取到的Topic消息队列跟本地缓存有修改的话
                         if (changed) {
                             TopicRouteData cloneTopicRouteData = topicRouteData.cloneTopicRouteData();
 
@@ -638,6 +640,7 @@ public class MQClientInstance {
                             }
 
                             // Update Pub info
+                            // 注释3.4.2：更新 Topic 对应的相关 Broker 地址缓存表
                             {
                                 TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
                                 publishInfo.setHaveTopicRouterInfo(true);
@@ -969,6 +972,7 @@ public class MQClientInstance {
     }
 
     public void doRebalance() {
+        // 注释5.4：遍历已注册的消费者
         for (Map.Entry<String, MQConsumerInner> entry : this.consumerTable.entrySet()) {
             MQConsumerInner impl = entry.getValue();
             if (impl != null) {

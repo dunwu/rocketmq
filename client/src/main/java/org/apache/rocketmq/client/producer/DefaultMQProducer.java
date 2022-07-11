@@ -54,6 +54,7 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
  *
  * <p> <strong>Thread Safety:</strong> After configuring and starting process, this class can be regarded as thread-safe
  * and used among multiple threads context. </p>
+ * 注释3.3.1：默认的消息生产者实现类
  */
 public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
@@ -265,6 +266,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * to invoke this method before sending or querying messages. </strong> </p>
      *
      * @throws MQClientException if there is any unexpected error.
+     * 注释3.3.2：使用组合
      */
     @Override
     public void start() throws MQClientException {
@@ -916,24 +918,24 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         return this.defaultMQProducerImpl.send(batch(msgs), messageQueue, timeout);
     }
-    
+
     @Override
     public void send(Collection<Message> msgs, SendCallback sendCallback) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.defaultMQProducerImpl.send(batch(msgs), sendCallback);
     }
-    
+
     @Override
     public void send(Collection<Message> msgs, SendCallback sendCallback,
         long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.defaultMQProducerImpl.send(batch(msgs), sendCallback, timeout);
     }
-    
+
     @Override
     public void send(Collection<Message> msgs, MessageQueue mq,
         SendCallback sendCallback) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         this.defaultMQProducerImpl.send(batch(msgs), queueWithNamespace(mq), sendCallback);
     }
-    
+
     @Override
     public void send(Collection<Message> msgs, MessageQueue mq,
         SendCallback sendCallback, long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
