@@ -79,9 +79,12 @@ public class NamesrvStartup {
             return null;
         }
 
+        // 1. 初始化 NamesrvConfig 配置和 NettyServerConfig 配置
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         nettyServerConfig.setListenPort(9876);
+
+        // 1.1. 加载配置文件中的配置
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
@@ -98,6 +101,7 @@ public class NamesrvStartup {
             }
         }
 
+        // 1.2. 加载启动命令中的配置
         if (commandLine.hasOption('p')) {
             InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
             MixAll.printObjectProperties(console, namesrvConfig);
@@ -107,11 +111,13 @@ public class NamesrvStartup {
 
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
+        // 2. 强制必须设置环境变量 ROCKETMQ_HOME
         if (null == namesrvConfig.getRocketmqHome()) {
             System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
 
+        // 3. 打印配置项
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
@@ -143,6 +149,8 @@ public class NamesrvStartup {
             System.exit(-3);
         }
 
+        // 注册 JVM 钩子函数并启动服务器，以便监昕Broker、 消息生产者的网络请求
+        // 如果代码中使用了线程池，一种优雅停机的方式就是注册一个 JVM 钩子函数，在 JVM 进程关闭之前，先将线程池关闭，及时释放资源
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
             @Override
             public Void call() throws Exception {
