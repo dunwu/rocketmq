@@ -887,6 +887,7 @@ public class BrokerController {
             this.registerBrokerAll(true, false, true);
         }
 
+        // 周期性向 NameServer 发送心跳包，保持活跃
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
