@@ -23,17 +23,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 注释3.2：消息类
+ * RocketMQ 消息封装类
  */
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
 
+    /**
+     * 主题
+     */
     private String topic;
     private int flag;
-    // 注释3.2：存放 TAG、KEYS、waitStoreMsgOK 消息发送时是否等待消息存储完成后再返回（异步同步刷盘）
-    // delayTimeLevel 消息延迟级别，用于定时消息和消息重试
+    /**
+     * 属性容器
+     * <p>
+     * 内含属性：
+     * tags：消息标签，用于消息过滤。
+     * keys：消息索引，多个用空格隔开，RocketMQ 可以根据这些 key 快速检索到消息。
+     * waitStoreMsgOK：消息发送时是否等消息存储完成后再返回。
+     * delayTimeLevel：消息延迟级别，用于定时消息或消息重试。
+     */
     private Map<String, String> properties;
+    /**
+     * 消息体
+     */
     private byte[] body;
+    /**
+     * 事务 ID
+     */
     private String transactionId;
 
     public Message() {

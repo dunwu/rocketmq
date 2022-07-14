@@ -44,6 +44,8 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
 /**
+ * 默认的消息生产者实现类 </p>
+ *
  * This class is the entry point for applications intending to send messages. </p>
  *
  * It's fine to tune fields which exposes getter/setter methods, but keep in mind, all of them should work well out of
@@ -54,7 +56,6 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
  *
  * <p> <strong>Thread Safety:</strong> After configuring and starting process, this class can be regarded as thread-safe
  * and used among multiple threads context. </p>
- * 注释3.3.1：默认的消息生产者实现类
  */
 public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
@@ -266,7 +267,6 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      * to invoke this method before sending or querying messages. </strong> </p>
      *
      * @throws MQClientException if there is any unexpected error.
-     * 注释3.3.2：使用组合
      */
     @Override
     public void start() throws MQClientException {

@@ -27,13 +27,26 @@ import org.apache.rocketmq.common.protocol.route.TopicRouteData;
  * 注释3.4.2：每个Topic存储的信息
  */
 public class TopicPublishInfo {
-    // 注释3.4.2：是否为顺序Topic
+
+    /**
+     * 是否为顺序 Topic
+     */
     private boolean orderTopic = false;
+    /**
+     * 是否有主题路由信息
+     */
     private boolean haveTopicRouterInfo = false;
-    // 注释3.4.2：Topic下的消息队列
+    /**
+     * Topic 的消息队列
+     */
     private List<MessageQueue> messageQueueList = new ArrayList<MessageQueue>();
-    // 注释3.4.3：ThreadLocal + volatile 玩法
+    /**
+     * 用于选择消息队列。每选择一次消息队列， 该值会自增 1
+     */
     private volatile ThreadLocalIndex sendWhichQueue = new ThreadLocalIndex();
+    /**
+     * 主题路由数据
+     */
     private TopicRouteData topicRouteData;
 
     public boolean isOrderTopic() {

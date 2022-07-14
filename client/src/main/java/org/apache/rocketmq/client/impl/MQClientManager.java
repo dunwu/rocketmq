@@ -44,9 +44,12 @@ public class MQClientManager {
         return getOrCreateMQClientInstance(clientConfig, null);
     }
 
-    // 创建 MQClientInstance 实例。整个 JVM 实例中只存在一个 MQClientManager 实例，
-    // 维护一个 MQClientInstance 缓存表 ConcurrentMap<String /*clientld*/, MQClientInstance> factoryTable，
-    // 也就是同一个 clientId 只会创建一个 MQClientInstance。
+    /**
+     * 获取或创建 MQClientInstance 实例
+     *
+     * 整个 JVM 实例中只存在一个 MQClientManager 实例（单例）
+     * MQClientManager 中维护一个 ConcurrentMap 类型的缓存，用于保证同一个 clientId 只会创建一个 MQClientInstance
+     */
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
         // clientId 为客户端 IP + instance + (unitName 可选），
         String clientId = clientConfig.buildMQClientId();
